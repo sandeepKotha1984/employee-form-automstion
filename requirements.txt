@@ -1,3 +1,4 @@
 selenium>=4.20,<5
 openpyxl>=3.1,<4
 python-dotenv>=1.0,<2
+boto3>=1.34,<2
