@@ -65,11 +65,9 @@ class LeaseFormAutomation:
             submit = self._wait().until(EC.element_to_be_clickable((
                 By.XPATH, "//form//button[@type='submit'] | //form//input[@type='submit']"
             )))
+            # Submit once to avoid duplicate form submissions.
             submit.click()
             import time
-
-            # Click submit
-            submit.click()
 
             # Allow the React application to update
             time.sleep(3)
