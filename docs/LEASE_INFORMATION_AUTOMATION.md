@@ -14,6 +14,36 @@ The solution receives Excel attachments through email, stores and validates them
 
 **Processing flow:** Email → AWS Lambda → Amazon S3 → Excel validation → AWS Step Functions → Amazon ECS Fargate → Selenium worker → Lease Information application.
 
+### End-to-end flow diagram
+
+```mermaid
+flowchart TD
+    A[Incoming Email] --> B[AWS Lambda: email_attachment_reader]
+    B --> C[Retrieve email credentials from AWS Secrets Manager]
+    C --> D[Extract Excel attachment]
+    D --> E[Upload source file to Amazon S3]
+    E --> F[Validate Excel workbook]
+    F --> G{Validation result}
+    G -->|Invalid| H[Create validation report in S3]
+    H --> I[Send SES email with validation errors]
+    I --> J[End: workflow not started]
+    G -->|Valid| K[Create validation report in S3]
+    K --> L[Start AWS Step Functions]
+    L --> M[RunLeaseAutomation]
+    M --> N[Launch ECS Fargate task]
+    N --> O[Selenium worker downloads Excel from S3]
+    O --> P[Read configured row and open Lease Information app]
+    P --> Q[Populate web form]
+    Q --> R[Submit form]
+    R --> S[Verify submission and record persistence]
+    S --> T[Task completes; Step Functions receives result]
+    T --> U[CloudWatch logs]
+    B -. logs .-> U
+    N -. container logs .-> U
+```
+
+**Important:** The invalid-file notification branch and the valid-file orchestration branch are verified by the recorded integration test. The final Selenium submission and persistence steps are shown as the intended worker flow; their business-level success is still pending verification.
+
 - **Valid attachment:** source file and validation report are stored in S3; Step Functions is started.
 - **Invalid attachment:** source file and validation report are stored in S3; an SES notification is sent to the captured sender; Step Functions is not started.
 
